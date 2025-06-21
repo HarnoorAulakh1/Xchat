@@ -168,7 +168,6 @@ export const getPreview = async (req: Request, res: Response) => {
       })
       .sort({ created_at: -1 })
       .limit(1);
-      console.log(messages);
     if (messages.length > 0) {
       res.status(200).send(messages[0]);
     } else {

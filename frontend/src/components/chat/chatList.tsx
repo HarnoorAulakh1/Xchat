@@ -1,4 +1,4 @@
-import type { userInterface } from "@/lib/types";
+import type { messageInterface, userInterface } from "@/lib/types";
 import { useEffect, useState, useContext } from "react";
 import { api } from "@/lib/utils";
 import { profileContext } from "@/contexts/profile";
@@ -6,8 +6,21 @@ import { formatTime } from "@/lib/utils";
 
 import { currentContext } from "@/contexts/current";
 
-export default function ChatList() {
+export default function ChatList({
+  search,
+  collapse,
+}: {
+  search?: string;
+  collapse?: boolean;
+}) {
   const [friends, setFriends] = useState<userInterface[]>([]);
+  const [filteredFriends, setFilteredFriends] = useState<userInterface[]>([]);
+  useEffect(() => {
+    const filtered = friends.filter((user) =>
+      user.username.toLowerCase().includes((search || "").toLowerCase())
+    );
+    setFilteredFriends(filtered);
+  }, [search, friends]);
   const { user } = useContext(profileContext);
   useEffect(() => {
     const socket = user.socket;
@@ -38,9 +51,9 @@ export default function ChatList() {
   }, [user._id]);
   return (
     <div className="flex flex-col gap-1 h-full overflow-y-auto">
-      {friends.length > 0 ? (
-        friends.map((friend) => (
-          <ChatListItem key={friend._id} user1={friend} />
+      {filteredFriends.length > 0 ? (
+        filteredFriends.map((friend) => (
+          <ChatListItem key={friend._id} user1={friend} collapse={collapse} />
         ))
       ) : (
         <div className="flex justify-center items-center h-full">
@@ -51,13 +64,19 @@ export default function ChatList() {
   );
 }
 
-function ChatListItem({ user1 }: { user1: userInterface }) {
+function ChatListItem({
+  user1,
+  collapse,
+}: {
+  user1: userInterface;
+  collapse?: boolean;
+}) {
   const [preview, setPreview] = useState("");
   const [time, setTime] = useState("...");
   const [isOnline, setIsOnline] = useState(false);
   const { user } = useContext(profileContext);
   const { _id, username, profilePicture, name } = user1;
-  const { setCurrent } = useContext(currentContext);
+  const { current, setCurrent } = useContext(currentContext);
   const [unread, setUnread] = useState<number>(0);
   useEffect(() => {
     const socket = user.socket;
@@ -70,11 +89,30 @@ function ChatListItem({ user1 }: { user1: userInterface }) {
         setIsOnline(data.isOnline);
       }
     };
-    socket.on("user_status", handleOnlineStatus);
-    return () => {
-      socket.off(username, handleOnlineStatus);
+    const handleMessagePreview = (data: { message: messageInterface }) => {
+      if (
+        (data.message.sender._id == _id &&
+          data.message.receiver._id == user._id) ||
+        (data.message.sender._id == user._id &&
+          data.message.receiver._id == _id)
+      ) {
+        console.log("Message preview received:", data);
+        const content = data.message.content;
+        setPreview(
+          content.substring(0, 20) + (content.length > 20 ? "..." : "")
+        );
+        setTime(formatTime(data.message.created_at));
+        if (data.message.sender._id !== user._id && current._id != _id)
+          setUnread((prev) => prev + 1);
+      }
     };
-  }, [username, user.socket]);
+    socket.on("user_status", handleOnlineStatus);
+    socket.on("message_preview", handleMessagePreview);
+    return () => {
+      socket.off("message_preview", handleMessagePreview);
+      socket.off("user_status", handleOnlineStatus);
+    };
+  }, [username, user.socket, current._id, _id, user._id]);
   useEffect(() => {
     const fetchPreview = async () => {
       try {
@@ -131,8 +169,10 @@ function ChatListItem({ user1 }: { user1: userInterface }) {
   }, [_id, user._id]);
   async function setCurrrentChat() {
     try {
-      const response=await api.post(
-        `/message/markAsRead?sender=${user._id}&receiver=${_id}&readBy=${user._id}`
+      const response = await api.post(
+        `/message/markAsRead?sender=${user._id}&receiver=${_id}&readBy=${
+          user._id
+        }&time=${new Date().toISOString()}`
       );
       console.log("Marked messages as read:", response.data);
     } catch (error) {
@@ -157,10 +197,12 @@ function ChatListItem({ user1 }: { user1: userInterface }) {
     >
       <div className="flex flex-row items-end justify-center">
         {profilePicture != "NULL" ? (
-          <img
-            src={profilePicture}
-            className="w-14 h-12 bg-gray-500 rounded-full"
-          ></img>
+          <div className="w-12 h-12 bg-gray-500 rounded-full flex justify-center items-center">
+            <img
+              src={profilePicture}
+              className="w-12 h-12 bg-gray-500 rounded-full"
+            ></img>
+          </div>
         ) : (
           <div className="w-12 h-12 bg-gray-500 rounded-full flex justify-center items-center"></div>
         )}
@@ -172,24 +214,26 @@ function ChatListItem({ user1 }: { user1: userInterface }) {
           {isOnline}
         </div>
       </div>
-      <div className="flex flex-col w-full">
-        <div className="flex flex-row justify-between">
-          <span className="text-sm font-semibold">{username}</span>
-          <p
-            className={`text-sm text-gray-500 transition-all duration-150  group-hover:translate-x-[-1rem]`}
-          >
-            {time}
-          </p>
+      {!collapse && (
+        <div className="flex flex-col w-full">
+          <div className="flex flex-row justify-between">
+            <span className="text-sm font-semibold">{username}</span>
+            <p
+              className={`text-sm text-gray-500 transition-all duration-150  group-hover:translate-x-[-1rem]`}
+            >
+              {time}
+            </p>
+          </div>
+          <div className="flex flex-row justify-between w-full">
+            <span className="text-xs text-gray-400">{preview}</span>{" "}
+            {unread != 0 && (
+              <div className="rounded-full w-5 h-5 text-center bg-green-500 text-black text-sm">
+                {unread}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="flex flex-row justify-between w-full">
-          <span className="text-xs text-gray-400">{preview}</span>{" "}
-          {unread != 0 && (
-            <div className="rounded-full w-5 h-5 text-center bg-green-500 text-black text-sm">
-              {unread}
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

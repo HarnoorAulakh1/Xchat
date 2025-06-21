@@ -67,7 +67,7 @@ export const getUnreadCount = async (req: Request, res: Response) => {
 };
 
 export const markAsRead = async (req: Request, res: Response) => {
-  const { sender, receiver, readBy } = req.query;
+  const { sender, receiver, readBy, time } = req.query;
   if (!sender || !receiver || !readBy) {
     res.status(400).send({ message: "Sender and receiver are required" });
     return;
@@ -85,6 +85,9 @@ export const markAsRead = async (req: Request, res: Response) => {
             },
           },
         },
+        created_at: {
+          $lte: new Date(time as string),
+        },
       },
       {
         $push: {
@@ -97,8 +100,8 @@ export const markAsRead = async (req: Request, res: Response) => {
     );
     await message.updateMany(
       {
-        sender:receiver,
-        receiver:sender,
+        sender: receiver,
+        receiver: sender,
         isRead: {
           $not: {
             $elemMatch: {
@@ -117,24 +120,24 @@ export const markAsRead = async (req: Request, res: Response) => {
         },
       }
     );
-    const user1 = await user.findOne({ _id: receiver });
-    const user2 = await user.findOne({ _id: sender });
-    if (!user1 || !user2) {
-      res.status(404).send({ message: "User not found" });
-      return;
+    const user1 = await user.findOne({ _id: sender });
+    const user2 = await user.findOne({ _id: receiver });
+    const username1 = user1?.username;
+    const username2 = user2?.username;
+    if (readBy == user2?._id.toString() && username1) {
+      console.log("Emitting message_read event to:", username1);
+      io.to(username1).emit("message_read", {
+        sender,
+        receiver,
+        time,
+      });
+    } else if (readBy == user1?._id.toString() && username2) {
+      io.to(username2).emit("message_read", {
+        sender,
+        receiver,
+        time,
+      });
     }
-    const username1 = user1.username;
-    const username2 = user2.username;
-    // if (readBy == user1._id.toString())
-    //   io.to(username2).emit("message_read", {
-    //     sender,
-    //     receiver,
-    //   });
-    // else
-    //   io.to(username1).emit("message_read", {
-    //     sender,
-    //     receiver,
-    //   });
     res.status(200).send({ message: "Messages marked as read" });
   } catch (error) {
     res.status(500).send({ message: "Internal server error" });

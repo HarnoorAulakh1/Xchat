@@ -121,7 +121,6 @@ export const initSocket = (server: HTTPServer) => {
     });
     socket.on("send_message", async (data) => {
       const { sender, receiver, content, file } = data;
-      console.log("Message data received:", data);
       const messageData: messageInterface = {
         sender,
         receiver,
@@ -135,7 +134,6 @@ export const initSocket = (server: HTTPServer) => {
       };
       if (file) {
         const result = await addMedia(file);
-        console.log("File uploaded to Cloudinary:", result);
         messageData.file = {
           type: file.type,
           name: file.name,
@@ -144,6 +142,10 @@ export const initSocket = (server: HTTPServer) => {
       }
       const newMessage = new message(messageData);
       await newMessage.save();
+      const populatedMessage = await message
+        .findById(newMessage._id)
+        .populate("sender", "_id username profilePicture")
+        .populate("receiver", "_id username profilePicture");
       const receiver1 = await user.findOne({ _id: receiver });
       const sender1 = await user.findOne({ _id: sender });
       if (!sender1) {
@@ -155,20 +157,16 @@ export const initSocket = (server: HTTPServer) => {
         return;
       }
       io.to(receiver1.username).emit("receive_message", {
-        sender: {
-          _id: sender1._id,
-          username: sender1.username,
-          profilePicture: sender1.profilePicture,
-        },
-        message: newMessage,
+        message: populatedMessage,
+      });
+      io.to(receiver1.username).emit("message_preview", {
+        message: populatedMessage,
+      });
+      io.to(sender1.username).emit("message_preview", {
+        message: populatedMessage,
       });
       socket.to(sender1.username).emit("receive_message", {
-        sender: {
-          _id: sender1._id,
-          username: sender1.username,
-          profilePicture: sender1.profilePicture,
-        },
-        message: newMessage,
+        message: populatedMessage,
       });
     });
 

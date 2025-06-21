@@ -27,7 +27,10 @@ export interface messageInterface {
   }
   content: string;
   created_at: string;
-  isRead?: boolean;
+  isRead?: {
+    user: string;
+    readAt: Date;
+  }[];
 }
 
 export interface notificationInterface {

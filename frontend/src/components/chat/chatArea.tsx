@@ -11,6 +11,7 @@ import type { messageInterface } from "@/lib/types";
 import { formatTime } from "@/lib/utils";
 import { api } from "@/lib/utils";
 import { FaFileAlt } from "react-icons/fa";
+import { IoCheckmarkDoneOutline } from "react-icons/io5";
 
 export default function ChatArea() {
   const {
@@ -18,7 +19,7 @@ export default function ChatArea() {
   } = useContext(currentContext);
 
   return (
-    <div className="w-[75%] h-full rounded-2xl p-3">
+    <div className="w-full h-full rounded-2xl p-3">
       <div className="bg-[#0a0a0a] rounded-2xl w-full h-full">
         {username ? (
           <Messaging
@@ -56,22 +57,31 @@ function Messaging({
   useEffect(() => {
     const socket = user.socket;
     if (!socket) return;
-    const handleNewMessage = async (data: { message: messageInterface }) => {
+    const handleNewMessage = async (data: {
+      sender: { _id: string; username: string; profilePicture: string };
+      message: messageInterface;
+    }) => {
       try {
         const response = await api.post(
-          `/message/markAsRead?sender=${user._id}&receiver=${_id}&readBy=${user._id}`
+          `/message/markAsRead?sender=${user._id}&receiver=${_id}&readBy=${user._id}&time=${data.message.created_at}`
         );
         console.log("Marked messages as read:", response.data);
       } catch (error) {
         console.error("Error marking messages as read:", error);
       }
-      setMessages((prev) => [...prev, data.message]);
+      if (
+        (data.message.sender._id == _id &&
+          data.message.receiver._id == user._id) ||
+        (data.message.sender._id && data.message.receiver._id == _id)
+      )
+        setMessages((prev) => [...prev, data.message]);
     };
     socket.on("receive_message", handleNewMessage);
+    // socket.on("message_read",)
     return () => {
       socket.off("receive_message", handleNewMessage);
     };
-  }, [setMessages, user.socket]);
+  }, [setMessages, user.socket, user._id, _id]);
 
   useEffect(() => {
     async function getMessages() {
@@ -179,15 +189,17 @@ function Messaging({
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto p-2">
         <div className="flex flex-col gap-2">
           {messages.map((message, index) => (
             <Message
               key={index}
               message={message.content}
               file={message.file}
-              time={formatTime(message.created_at)}
+              time={message.created_at}
               isSender={message.sender.username === user.username}
+              readBy={message.isRead}
+              receiver={message.receiver._id}
             />
           ))}
           <div ref={startRef} className=" w-full h-4"></div>
@@ -231,6 +243,8 @@ function Message({
   file,
   time,
   isSender,
+  readBy,
+  receiver,
 }: {
   message: string;
   file?: {
@@ -240,49 +254,97 @@ function Message({
   };
   time: string;
   isSender: boolean;
+  readBy:
+    | {
+        user: string;
+        readAt: Date;
+      }[]
+    | undefined;
+  receiver: string;
 }) {
+  const { user } = useContext(profileContext);
+  const [time1] = useState<string>(formatTime(time));
+  const [isRead, setRead] = useState(
+    readBy && readBy.length > 0 && readBy.some((read) => read.user === user._id)
+  );
+  useEffect(() => {
+    const socket = user.socket;
+    if (!socket) return;
+    const handleMessageRead = (data: {
+      sender: string;
+      receiver: string;
+      time: string;
+    }) => {
+      if (
+        ((data.sender === user._id && data.receiver === receiver) ||
+          (data.sender === receiver && data.receiver === user._id)) &&
+        new Date(data.time).toISOString >= new Date(time).toISOString
+      ) {
+        setRead(true);
+      }
+    };
+    if (!isRead) socket.on("message_read", handleMessageRead);
+    return () => {
+      socket.off("message_read", handleMessageRead);
+    };
+  }, [user.socket, user._id, time, receiver, isRead]);
   return (
     <div
-      className={`flex flex-col gap-4 ${
+      className={`flex flex-col  items-center ${
         isSender
-          ? "bg-blue-600 text-white self-end"
+          ? "bg-green-800 text-white self-end"
           : "bg-gray-800 text-white self-start"
-      } p-2 rounded-lg max-w-xs`}
+      } rounded-lg max-w-[30rem] min-w-[5rem]`}
     >
-      <div className={`flex flex-col `}>
-        <p>{message}</p>
-      </div>
-      {file && (
-        <div className="flex flex-col gap-2 items-center">
-          {file.type == "image" ? (
-            <a
-              href={file.link}
-              className="text-blue-400 hover:underline "
-              target="_blank"
-            >
-              {file.link && <img src={file.link} alt="" />}
-            </a>
-          ) : (
-            <a
-              href={file.link}
-              className="text-blue-400 hover:underline cursor-pointer"
-              target="_blank"
-            >
-              <div className="flex justify-center cursor-pointer items-center">
-                <FaFileAlt className="text-[3rem] text-gray-300" />
-              </div>
-            </a>
-          )}
-          <span className="text-xs text-gray-200">{file.name}</span>
-        </div>
-      )}
-      <p
-        className={`text-right w-full ${
-          isSender ? "text-[#d0d0d0]" : "text-gray-400"
-        } text-xs`}
+      <div
+        className={`flex flex-col gap-4 ${
+          isSender
+            ? "bg-green-800 text-white self-end"
+            : "bg-gray-800 text-white self-start"
+        } p-2 rounded-lg max-w-xs`}
       >
-        {time}
-      </p>
+        <div className="flex flex-row items-center gap-2">
+          <p>{message}</p>
+        </div>
+        {file && (
+          <div className="flex flex-col gap-2 items-center">
+            {file.type == "image" ? (
+              <a
+                href={file.link}
+                className="text-blue-400 hover:underline "
+                target="_blank"
+              >
+                {file.link && <img src={file.link} alt="" />}
+              </a>
+            ) : (
+              <a
+                href={file.link}
+                className="text-blue-400 hover:underline cursor-pointer"
+                target="_blank"
+              >
+                <div className="flex justify-center cursor-pointer items-center">
+                  <FaFileAlt className="text-[3rem] text-gray-300" />
+                </div>
+              </a>
+            )}
+            <span className="text-xs text-gray-200">{file.name}</span>
+          </div>
+        )}
+      </div>
+      <div className="flex flex-row justify-end w-full mr-2">
+        <p
+          className={`${isSender ? "text-[#d0d0d0]" : "text-gray-400"} text-xs`}
+        >
+          {time1}
+        </p>
+        {isSender && (
+          <div className="flex flex-row  gap-0">
+            <IoCheckmarkDoneOutline
+              className={` ${isRead ? "text-blue-400" : "text-gray-400"}`}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
