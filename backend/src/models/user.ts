@@ -3,9 +3,9 @@ import { Schema } from "mongoose";
 import dotenv from "dotenv";
 dotenv.config({ path: "./.env" });
 
-//mongoose.connect(process.env.MONGODB_URI as string);
+mongoose.connect(process.env.MONGODB_URI as string);
 
-mongoose.connect("mongodb://localhost:27017/xchat");
+//mongoose.connect("mongodb://localhost:27017/xchat");
 
 const schema = new Schema({
   username: {
