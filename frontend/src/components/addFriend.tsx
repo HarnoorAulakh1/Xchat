@@ -34,35 +34,41 @@ export function AddFriend() {
     };
   }, [username]);
   return (
-    <div className="flex flex-col w-full h-full items-center pt-10">
-      <h1 className="text-2xl font-bold mb-4">Add Friend</h1>
-      <form className="w-full relative max-w-sm h-full">
-        <input
-          onChange={(e) => setUsername(e.target.value)}
-          type="text"
-          placeholder="Add friends by username"
-          className="w-full text-md p-2 border  outline-none border-gray-300 rounded mb-4"
-        />
-        <div className="w-full absolute h-[70%] overflow-y-scroll">
-          <div className="flex flex-col gap-2 w-full">
-            {users.length > 0 ? (
-              users.map((user: userInterface) => (
-                <Tab
-                  key={user._id}
-                  _id={user._id}
-                  username={user.username}
-                  name={user.name}
-                  profilePicture={user.profilePicture}
-                  socket={socket}
-                />
-              ))
-            ) : (
-              <div className="text-gray-400 text-center">No users found</div>
-            )}
+      <div className="flex flex-row gap-2 w-full h-full items-center justify-center rounded-md bg-[#262626] text-[#e5e5e5]">
+      <img
+        src="./teddy.avif"
+        className="w-[20%] h-[80%] bg-gray-500 rounded-sm ml-5"
+      ></img>
+      <div className="flex flex-col w-full h-full items-center pt-10">
+        <h1 className="text-2xl font-bold mb-4">Add Friend</h1>
+        <form className="w-full relative max-w-sm h-full">
+          <input
+            onChange={(e) => setUsername(e.target.value)}
+            type="text"
+            placeholder="Add friends by username"
+            className="w-full text-md p-2 border  outline-none border-gray-300 rounded mb-4"
+          />
+          <div className="w-full absolute h-[70%] overflow-y-scroll">
+            <div className="flex flex-col gap-2 w-full">
+              {users.length > 0 ? (
+                users.map((user: userInterface) => (
+                  <Tab
+                    key={user._id}
+                    _id={user._id}
+                    username={user.username}
+                    name={user.name}
+                    profilePicture={user.profilePicture}
+                    socket={socket}
+                  />
+                ))
+              ) : (
+                <div className="text-gray-400 text-center">No users found</div>
+              )}
+            </div>
           </div>
-        </div>
-      </form>
-    </div>
+        </form>
+      </div>
+      </div>
   );
 }
 

@@ -1,107 +1,95 @@
-import type { messageInterface, userInterface } from "@/lib/types";
+import type {
+  groupInterface,
+  messageInterface,
+} from "@/lib/types";
 import { useEffect, useState, useContext } from "react";
 import { api } from "@/lib/utils";
 import { profileContext } from "@/contexts/profile";
 import { formatTime } from "@/lib/utils";
 
 import { currentContext } from "@/contexts/current";
-import Loading from "@/lib/loader";
 
-export default function ChatList({
+export default function GroupList({
   search,
   collapse,
 }: {
   search?: string;
   collapse?: boolean;
 }) {
-  const [friends, setFriends] = useState<userInterface[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filteredFriends, setFilteredFriends] = useState<userInterface[]>([]);
+  const [groups, setGroups] = useState<groupInterface[]>([]);
+  const [filteredGroups, setFilteredGroups] = useState<groupInterface[]>([]);
   useEffect(() => {
-    const filtered = friends.filter((user) =>
-      user.username.toLowerCase().includes((search || "").toLowerCase())
+    const filtered = groups.filter((group) =>
+      group.name.toLowerCase().includes((search || "").toLowerCase())
     );
-    setFilteredFriends(filtered);
-  }, [search, friends]);
+    setFilteredGroups(filtered);
+  }, [search, groups]);
   const { user } = useContext(profileContext);
   useEffect(() => {
     const socket = user.socket;
     if (!socket) return;
-    const add_friend = (data: { user: userInterface }) => {
-      setFriends((prev) => [...prev, data.user]);
+    const add_group = (data: { group: groupInterface }) => {
+      console.log("New group added:", data.group);
+      setGroups((prev) => [...prev, data.group]);
     };
-    socket.on("add_friend", add_friend);
+    socket.on("add_group", add_group);
     return () => {
-      socket.off("add_friend", add_friend);
+      socket.off("add_group", add_group);
     };
   }, [user.socket]);
   useEffect(() => {
-    async function fetchFriends() {
-      setLoading(true);
+    async function fetchGroups() {
       try {
-        const response = await api.get("/user/getFriends/" + user._id);
+        const response = await api.get("/group/getGroups?userId=" + user._id);
         if (response.status == 200) {
           const data = response.data;
-          setFriends(data);
+          console.log("Fetched groups:", data);
+          setGroups(data);
         } else {
-          console.error("Failed to fetch friends");
+          console.error("Failed to fetch groups");
         }
       } catch (error) {
-        console.error("Error fetching friends:", error);
+        console.error("Error fetching groups:", error);
       }
-      setLoading(false);
     }
-    fetchFriends();
+    fetchGroups();
   }, [user._id]);
   return (
-    <div className="flex flex-col gap-1 h-max ">
-      {loading ? (
-        <div className="flex justify-center items-center h-full">
-          <Loading />
-        </div>
-      ) : filteredFriends.length > 0 ? (
-        filteredFriends.map((friend) => (
-          <ChatListItem key={friend._id} user1={friend} collapse={collapse} />
-        ))
-      ) : (
-        <></>
-      )}
+    <div className="flex flex-col gap-1 h-full overflow-y-auto">
+      {filteredGroups.length > 0 &&
+        filteredGroups.map((group) => (
+          <ChatListItem key={group._id} group={group} collapse={collapse} />
+        ))}
     </div>
   );
 }
 
 function ChatListItem({
-  user1,
+  group,
   collapse,
 }: {
-  user1: userInterface;
+  group: groupInterface;
   collapse?: boolean;
 }) {
   const [preview, setPreview] = useState("");
   const [time, setTime] = useState("...");
-  const [isOnline, setIsOnline] = useState(false);
   const { user } = useContext(profileContext);
-  const { _id, username, profilePicture, name } = user1;
+  const { _id, logo, name } = group;
   const { current, setCurrent } = useContext(currentContext);
   const [unread, setUnread] = useState<number>(0);
   useEffect(() => {
     const socket = user.socket;
-    if (!socket || !username) return;
-    const handleOnlineStatus = (data: {
-      username: string;
-      isOnline: boolean;
-    }) => {
-      if (data.username == username) {
-        setIsOnline(data.isOnline);
-      }
-    };
+    if (!socket || !name) return;
+    // const handleOnlineStatus = (data: {
+    //   username: string;
+    //   isOnline: boolean;
+    // }) => {
+    //   if (data.username == username) {
+    //     setIsOnline(data.isOnline);
+    //   }
+    // };
     const handleMessagePreview = (data: { message: messageInterface }) => {
-      if (
-        (data.message.sender._id == _id &&
-          data.message.receiver._id == user._id) ||
-        (data.message.sender._id == user._id &&
-          data.message.receiver._id == _id)
-      ) {
+      if (data.message.group == _id) {
         const content = data.message.content;
         setPreview(
           content.substring(0, 20) + (content.length > 20 ? "..." : "")
@@ -111,18 +99,18 @@ function ChatListItem({
           setUnread((prev) => prev + 1);
       }
     };
-    socket.on("user_status", handleOnlineStatus);
+    //socket.on("user_status", handleOnlineStatus);
     socket.on("message_preview", handleMessagePreview);
     return () => {
       socket.off("message_preview", handleMessagePreview);
-      socket.off("user_status", handleOnlineStatus);
+      //socket.off("user_status", handleOnlineStatus);
     };
-  }, [username, user.socket, current._id, _id, user._id]);
+  }, [name, user.socket, current._id, _id, user._id]);
   useEffect(() => {
     const fetchPreview = async () => {
       try {
         const response = await api.get(
-          "/user/getPreview?sender=" + _id + "&receiver=" + user._id
+          "/user/getPreview?sender=" + user._id + "&group=" + _id
         );
         if (response.status == 200) {
           const data = response.data;
@@ -142,21 +130,10 @@ function ChatListItem({
         setPreview("No messages yet ...");
       }
     };
-    async function checkOnlineStatus() {
-      try {
-        const response = await api.get("/user/isOnline/" + _id);
-        if (response.status == 200) {
-          const data = response.data;
-          setIsOnline(data.isOnline);
-        }
-      } catch (error) {
-        console.error("Error checking online status:", error);
-      }
-    }
     async function checkUnread() {
       try {
         const response = await api.get(
-          `/message/getUnreadCount?sender=${_id}&receiver=${user._id}&readBy=${user._id}`
+          `/message/getUnreadCount?readBy=${user._id}&group=${_id}` 
         );
         if (response.status == 200) {
           const data = response.data;
@@ -169,15 +146,12 @@ function ChatListItem({
       }
     }
     checkUnread();
-    checkOnlineStatus();
     fetchPreview();
   }, [_id, user._id]);
   async function setCurrrentChat() {
     try {
-       await api.post(
-        `/message/markAsRead?sender=${user._id}&receiver=${_id}&readBy=${
-          user._id
-        }&time=${new Date().toISOString()}`
+      await api.post(
+        `/message/markAsRead?readBy=${user._id}&group=${_id}&time=${new Date().toISOString()}`
       );
     } catch (error) {
       console.error("Error marking messages as read:", error);
@@ -186,11 +160,10 @@ function ChatListItem({
     setCurrent(() => {
       return {
         _id: _id,
-        username: username,
-        profilePicture: profilePicture,
+        username: name,
+        profilePicture: logo,
         name: name,
-        isOnline: isOnline,
-        isGroup: false,
+        isGroup: true,
       };
     });
   }
@@ -200,28 +173,21 @@ function ChatListItem({
       className="flex flex-row items-center gap-2 p-2 group hover:bg-[#454545] rounded-lg cursor-pointer"
     >
       <div className="flex flex-row items-end justify-center">
-        {profilePicture != "NULL" ? (
+        {logo != "NULL" ? (
           <div className="w-12 h-12 bg-gray-500 rounded-full flex justify-center items-center">
             <img
-              src={profilePicture}
+              src={logo}
               className="w-12 h-12 bg-gray-500 rounded-full"
             ></img>
           </div>
         ) : (
           <div className="w-12 h-12 bg-gray-500 rounded-full flex justify-center items-center"></div>
         )}
-        <div
-          className={`rounded-full w-2 h-2 ${
-            isOnline == true ? "bg-green-500" : ""
-          }`}
-        >
-          {isOnline}
-        </div>
       </div>
       {!collapse && (
         <div className="flex flex-col w-full">
           <div className="flex flex-row justify-between">
-            <span className="text-sm font-semibold">{username}</span>
+            <span className="text-sm font-semibold">{name}</span>
             <p
               className={`text-sm text-gray-500 transition-all duration-150  group-hover:translate-x-[-1rem]`}
             >

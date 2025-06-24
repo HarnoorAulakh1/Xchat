@@ -2,10 +2,14 @@ import React, { useState } from "react";
 import { RxCross2 } from "react-icons/rx";
 
 export default function Popup({
+  width,
+  height,
   children,
   title,
   trigger,
 }: {
+  width?: string;
+  height?: string;
   children: React.ReactNode;
   title?: string;
   trigger: React.ReactNode;
@@ -33,7 +37,7 @@ export default function Popup({
             }}
             className="fixed z-10 h-screen w-screen"
           ></div>
-          <div className="flex flex-col justify-center items-center z-20 h-[50%] w-[50%]">
+          <div className={`flex flex-col justify-center items-center z-20 ${height!=undefined?`h-[${height}]`:"h-[50%]"} ${width!=undefined?`w-[${width}]`:"w-[50%]"} bg-[#333333] rounded-xl`}>
             <div className="w-full flex items-center rounded-t-xl p-1 bg-gray-400">
               <div
                 onClick={() => {

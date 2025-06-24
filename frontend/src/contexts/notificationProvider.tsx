@@ -18,27 +18,22 @@ export default function NotificationProvider({
     const socket = user.socket;
     if (!socket) return;
 
-    const handleFriendRequest = (data: {
+   
+    const handle = (data: {
       sender: string;
       notification: notificationInterface;
     }) => {
-      console.log("Notification: Friend Request Received");
       notify((prev) => [...prev, data.notification]);
     };
-
-    const handleFriendAccepted = (data: {
-      sender: string;
-      notification: notificationInterface;
-    }) => {
-      console.log("Notification: Friend Request Accepted");
-      notify((prev) => [...prev, data.notification]);
-    };
-
-    socket.on("receive_friend_request", handleFriendRequest);
-    socket.on("friend_request_accepted", handleFriendAccepted);
+    socket.on("receive_friend_request", handle);
+    socket.on("friend_request_accepted", handle);
+    socket.on("receive_group_request", handle);
+    socket.on("group_request_accepted", handle);
     return () => {
-      socket.off("receive_friend_request", handleFriendRequest);
-      socket.off("friend_request_accepted", handleFriendAccepted);
+      socket.off("receive_friend_request", handle);
+      socket.off("friend_request_accepted", handle);
+      socket.off("receive_group_request", handle);
+      socket.off("group_request_accepted", handle);
     };
   }, [user.socket]);
 

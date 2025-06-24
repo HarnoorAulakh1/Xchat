@@ -39,7 +39,7 @@ const schema = new Schema({
   groups: [
     {
       type: Schema.Types.ObjectId,
-      ref: "channel",
+      ref: "group",
     },
   ],
   isOnline: {

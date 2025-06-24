@@ -10,17 +10,17 @@ export const currentContext = createContext<{
     isGroup: boolean;
     numberOfMembers?: number;
     isOnline?: boolean;
-    memebers?: userInterface[];
+    members?: userInterface[];
   };
   setCurrent: React.Dispatch<
     React.SetStateAction<{
-      _id?: string;
+      _id: string;
       name: string;
       username: string;
       profilePicture: string;
       numberOfMembers?: number;
       isGroup: boolean;
-      memebers?: userInterface[];
+      members?: userInterface[];
     }>
   >;
 }>({
@@ -31,7 +31,7 @@ export const currentContext = createContext<{
     profilePicture: "",
     numberOfMembers: 1,
     isGroup: false,
-    memebers: [],
+    members: [],
   },
   setCurrent: () => {},
 });

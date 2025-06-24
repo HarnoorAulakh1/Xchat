@@ -5,7 +5,7 @@ const schema = new Schema(
   {
     receiver: { type: Schema.Types.ObjectId, ref: "user", required: true },
     sender: { type: Schema.Types.ObjectId, ref: "user", required: true },
-    group: { type: Schema.Types.ObjectId, ref: "team" },
+    group: { type: Schema.Types.ObjectId, ref: "group" },
     type: { type: String, required: true },
     title: { type: String, required: true },
     description: { type: String, required: true },

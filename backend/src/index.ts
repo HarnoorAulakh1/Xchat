@@ -7,6 +7,7 @@ import http from "http";
 import user from "./routes/user.js";
 import notification from "./routes/notification.js";
 import message from "./routes/message.js";
+import group from "./routes/group.js";
 dotenv.config();
 
 const app = express();
@@ -17,7 +18,6 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 8000;
-const PORT2 = process.env.PORT2 || 3000;
 
 app.use(
   cors({
@@ -29,6 +29,7 @@ app.use(
 );
 
 app.use("/user", user);
+app.use("/group", group);
 app.use("/message", message);
 app.use("/notification", notification);
 app.get("/", (req, res) => {

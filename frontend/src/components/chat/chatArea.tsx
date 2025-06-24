@@ -15,7 +15,7 @@ import { IoCheckmarkDoneOutline } from "react-icons/io5";
 
 export default function ChatArea() {
   const {
-    current: { profilePicture, username, _id },
+    current: { profilePicture, username, _id, isGroup },
   } = useContext(currentContext);
 
   return (
@@ -24,6 +24,7 @@ export default function ChatArea() {
         {username ? (
           <Messaging
             _id={_id}
+            isGroup={isGroup}
             profilePicture={profilePicture}
             username={username}
           />
@@ -39,10 +40,12 @@ function Messaging({
   _id,
   profilePicture,
   username,
+  isGroup,
 }: {
   _id: string;
   profilePicture: string;
   username: string;
+  isGroup?: boolean;
 }) {
   const startRef = useRef<HTMLDivElement>(null);
   const { messages, setMessages } = useContext(messageContext);
@@ -57,10 +60,7 @@ function Messaging({
   useEffect(() => {
     const socket = user.socket;
     if (!socket) return;
-    const handleNewMessage = async (data: {
-      sender: { _id: string; username: string; profilePicture: string };
-      message: messageInterface;
-    }) => {
+    const handleNewMessage = async (data: { message: messageInterface }) => {
       try {
         const response = await api.post(
           `/message/markAsRead?sender=${user._id}&receiver=${_id}&readBy=${user._id}&time=${data.message.created_at}`
@@ -70,9 +70,13 @@ function Messaging({
         console.error("Error marking messages as read:", error);
       }
       if (
-        (data.message.sender._id == _id &&
+        (isGroup && _id == data.message.group) ||
+        (data.message.receiver &&
+          data.message.sender._id == _id &&
           data.message.receiver._id == user._id) ||
-        (data.message.sender._id && data.message.receiver._id == _id)
+        (data.message.receiver &&
+          data.message.sender._id &&
+          data.message.receiver._id == _id)
       )
         setMessages((prev) => [...prev, data.message]);
     };
@@ -81,13 +85,15 @@ function Messaging({
     return () => {
       socket.off("receive_message", handleNewMessage);
     };
-  }, [setMessages, user.socket, user._id, _id]);
+  }, [setMessages, user.socket, user._id, _id, isGroup]);
 
   useEffect(() => {
     async function getMessages() {
       try {
         const response = await api.get(
-          `/message/getMessages?sender=${user._id}&receiver=${_id}`
+          `/message/getMessages?sender=${user._id}&receiver=${_id}&group=${
+            isGroup ? _id : ""
+          }`
         );
         if (response.status === 200) {
           const data = response.data;
@@ -101,7 +107,7 @@ function Messaging({
     }
 
     if (_id && user._id) getMessages();
-  }, [_id, user._id, setMessages]);
+  }, [_id, user._id, setMessages, isGroup]);
 
   function sendMessage(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -127,6 +133,7 @@ function Messaging({
       sender: string;
       receiver: string;
       content: string;
+      group?: string;
       file?: {
         type: string;
         name: string;
@@ -151,6 +158,10 @@ function Messaging({
           link: file,
         },
       };
+    }
+    if (isGroup) {
+      newMessage.group = _id;
+      newMessage1.group = _id;
     }
     console.log("Sending message:", newMessage);
     socket.emit("send_message", newMessage1);
@@ -199,7 +210,7 @@ function Messaging({
               time={message.created_at}
               isSender={message.sender.username === user.username}
               readBy={message.isRead}
-              receiver={message.receiver._id}
+              receiver={message.receiver?._id}
             />
           ))}
           <div ref={startRef} className=" w-full h-4"></div>
@@ -260,12 +271,13 @@ function Message({
         readAt: Date;
       }[]
     | undefined;
-  receiver: string;
+  receiver?: string;
 }) {
   const { user } = useContext(profileContext);
   const [time1] = useState<string>(formatTime(time));
+  const { current } = useContext(currentContext);
   const [isRead, setRead] = useState(
-    readBy && readBy.length > 0 && readBy.some((read) => read.user === user._id)
+    readBy && readBy.length > 0 && readBy.some((read) => read.user === receiver)
   );
   useEffect(() => {
     const socket = user.socket;
@@ -275,6 +287,7 @@ function Message({
       receiver: string;
       time: string;
     }) => {
+      console.log("Message read event received:", data);
       if (
         ((data.sender === user._id && data.receiver === receiver) ||
           (data.sender === receiver && data.receiver === user._id)) &&
@@ -340,7 +353,9 @@ function Message({
         {isSender && (
           <div className="flex flex-row  gap-0">
             <IoCheckmarkDoneOutline
-              className={` ${isRead ? "text-blue-400" : "text-gray-400"}`}
+              className={` ${
+                isRead && !current.isGroup ? "text-blue-400" : "text-gray-400"
+              }`}
             />
           </div>
         )}

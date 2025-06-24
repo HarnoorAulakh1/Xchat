@@ -153,28 +153,53 @@ export const getFriends = async (req: Request, res: Response) => {
 };
 
 export const getPreview = async (req: Request, res: Response) => {
-  const { sender, receiver } = req.query;
-  if (!sender || !receiver) {
-    res.status(400).send({ message: "Sender and receiver are required" });
-    return;
-  }
-  try {
-    const messages = await message
-      .find({
-        $or: [
-          { sender, receiver },
-          { sender: receiver, receiver: sender },
-        ],
-      })
-      .sort({ created_at: -1 })
-      .limit(1);
-    if (messages.length > 0) {
-      res.status(200).send(messages[0]);
-    } else {
-      res.status(200).send("No messages yet ...");
+  const { sender, receiver, group } = req.query;
+  if (group) {
+    if (!sender || !group) {
+      res.status(400).send({ message: "Sender and group are required" });
+      return;
     }
-  } catch (error) {
-    res.status(500).send({ message: "Internal server error" });
+    try {
+      const messages = await message
+        .find({
+          $or: [
+            { sender, group },
+            { sender: receiver, receiver: sender },
+          ],
+        })
+        .sort({ created_at: -1 })
+        .limit(1);
+      if (messages.length > 0) {
+        res.status(200).send(messages[0]);
+      } else {
+        res.status(200).send("No messages yet ...");
+      }
+    } catch (error) {
+      res.status(500).send({ message: "Internal server error" });
+    }
+  } else {
+    if (!sender || !receiver) {
+      res.status(400).send({ message: "Sender and receiver are required" });
+      return;
+    }
+    try {
+      const messages = await message
+        .find({
+          $or: [
+            { sender, receiver },
+            { sender: receiver, receiver: sender },
+          ],
+        })
+        .sort({ created_at: -1 })
+        .limit(1);
+      if (messages.length > 0) {
+        res.status(200).send(messages[0]);
+      } else {
+        res.status(200).send("No messages yet ...");
+      }
+    } catch (error) {
+      res.status(500).send({ message: "Internal server error" });
+    }
   }
 };
 

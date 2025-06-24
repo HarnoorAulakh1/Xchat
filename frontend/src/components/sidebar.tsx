@@ -11,12 +11,16 @@ import { CiLogout } from "react-icons/ci";
 import { api } from "@/lib/utils";
 import { useNavigate } from "react-router";
 import { GoSidebarCollapse } from "react-icons/go";
+import { MdOutlineGroups } from "react-icons/md";
+import  AddGroup from "./chat/addGroup";
+import GroupList from "./chat/groupList";
 
 export default function SideBar() {
   const [focus, setFocus] = useState(false);
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
   const [collapse, setCollapse] = useState(false);
+
   async function logout() {
     await api.post("/user/logout");
     navigate("/auth");
@@ -45,6 +49,18 @@ export default function SideBar() {
                 >
                   <CiLogout className="text-xl text-[#e5e5e5]" />
                 </button>
+                <Popup
+                width="60%"
+                height="80%"
+                  title="Create Group"
+                  trigger={
+                    <button className="p-2 rounded-xl hover:bg-gray-700 text-md">
+                      <MdOutlineGroups />
+                    </button>
+                  }
+                >
+                  <AddGroup />
+                </Popup>
                 <Popup
                   title="Add Friend"
                   trigger={
@@ -98,8 +114,9 @@ export default function SideBar() {
           </div>
         )}
       </div>
-      <div className="h-full">
+      <div className="h-full flex flex-col overflow-y-auto">
         <ChatList search={search} collapse={collapse} />
+        <GroupList search={search} collapse={collapse} />
       </div>
     </div>
   );

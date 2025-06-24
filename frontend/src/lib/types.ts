@@ -15,7 +15,7 @@ export interface messageInterface {
     username: string;
     profilePicture: string;
   };
-  receiver: {
+  receiver?: {
     _id: string;
     username: string;
     profilePicture: string;
@@ -24,7 +24,8 @@ export interface messageInterface {
     type: string;
     name: string;
     link: string;
-  }
+  },
+  group?:string,
   content: string;
   created_at: string;
   isRead?: {
@@ -37,9 +38,18 @@ export interface notificationInterface {
   _id: string;
   sender?: string;
   receiver?: string;
+  group?: string;
   title: string;
   description: string;
   type: string;
   time: number;
   popup?: boolean;
+}
+
+export interface groupInterface {
+  _id: string;
+  name: string;
+  logo: string;
+  members: string[];
+  admins: string[];
 }

@@ -24,7 +24,6 @@ export default function AppLayout() {
         const response = await api.post("/user/checkLogin");
         if (response.status == 200) {
           const data = response.data;
-          console.log("User data:", data);
           setUser((x) => {
             return {
               ...x,
@@ -45,7 +44,7 @@ export default function AppLayout() {
       setLoading(true);
     }
     check();
-    socket.current = io("http://localhost:8000", {
+    socket.current = io(import.meta.env.VITE_PRODUCTION || "http://localhost:8000", {
       withCredentials: true,
       transports: ["websocket"],
     });

@@ -22,6 +22,9 @@ export default function useNotify() {
     popup?: boolean;
     _id?: string;
   }) {
+    console.log("Adding notification:", {
+      title,
+      description,});
     const newNotification = {
       title,
       description,

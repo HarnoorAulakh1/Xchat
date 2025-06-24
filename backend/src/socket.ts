@@ -5,6 +5,7 @@ import { notification } from "./models/notifications.js";
 import message from "./models/message.js";
 import { messageInterface } from "./types.js";
 import { addMedia } from "./utils/messages.js";
+import group from "./models/group.js";
 
 const map = new Map<string, number>();
 
@@ -72,6 +73,104 @@ export const initSocket = (server: HTTPServer) => {
         notification: newNotification,
       });
     });
+    socket.on("sendGroupRequest", async (data) => {
+      const { sender, receiver, group } = data;
+      console.log("Group request data received:", data);
+      const group1 = await group.findOne({ _id: group });
+      const receiver1 = await user.findOne({ _id: receiver });
+      const sender1 = await user.findOne({ _id: sender });
+      if (!receiver1) {
+        console.error("Receiver not found");
+        return;
+      }
+      if (!group1) {
+        console.error("Group not found");
+        return;
+      }
+      if (!sender1) {
+        console.error("Sender not found");
+        return;
+      }
+      const check = await notification.findOne({
+        sender,
+        receiver,
+        group,
+        type: "request",
+      });
+      const check1 = await group1.members.find(
+        (member: any) => member.toString() === receiver.toString()
+      );
+      if (check || check1) {
+        return;
+      }
+      const notificationData = {
+        sender: sender,
+        receiver: receiver,
+        group: group,
+        title: "Group Request",
+        description: `${sender1.name} sent you a group request to join ${group1.name}`,
+        type: "request",
+      };
+      const newNotification = new notification(notificationData);
+      await newNotification.save();
+      io.to(receiver1.username).emit("receive_group_request", {
+        sender: sender1.username,
+        notification: newNotification,
+      });
+    });
+    socket.on("groupRequestAction", async (data) => {
+      const { sender, receiver, group: groupId, action } = data;
+      if (action !== "accept" && action !== "reject") {
+        console.error("Invalid action");
+        return;
+      }
+      await notification.findOneAndDelete({
+        sender,
+        receiver,
+        group: groupId,
+        type: "request",
+      });
+      if (action === "accept") {
+        const group1 = await group.findOne({ _id: groupId });
+        const receiver1 = await user.findOne({ _id: receiver });
+        const sender1 = await user.findOne({ _id: sender });
+        if (!group1) {
+          console.error("Group not found");
+          return;
+        }
+        if (!receiver1) {
+          console.error("Receiver not found");
+          return;
+        }
+        if (!sender1) {
+          console.error("Sender not found");
+          return;
+        }
+        const notificationData = {
+          sender: receiver,
+          receiver: sender,
+          group: groupId,
+          title: "Group Request Accepted",
+          description: `${receiver1.name} accepted your group request to join ${group1.name}`,
+          type: "success",
+        };
+        const newNotification = new notification(notificationData);
+        await newNotification.save();
+
+        await group.updateOne(
+          { _id: groupId },
+          { $push: { members: receiver } }
+        );
+        await user.updateOne({ _id: receiver }, { $push: { groups: groupId } });
+        io.to(sender1.username).emit("group_request_accepted", {
+          sender: receiver1.username,
+          notification: notificationData,
+        });
+        io.to(receiver1.username).emit("add_group", {
+          group: group1,
+        });
+      }
+    });
     socket.on("requestAction", async (data) => {
       //console.log("Friend request accepted:", data);
       const { sender, receiver, action } = data;
@@ -120,54 +219,109 @@ export const initSocket = (server: HTTPServer) => {
       }
     });
     socket.on("send_message", async (data) => {
-      const { sender, receiver, content, file } = data;
-      const messageData: messageInterface = {
-        sender,
-        receiver,
-        content,
-        isRead: [
-          {
-            user: sender,
-            readAt: new Date(),
-          },
-        ],
-      };
-      if (file) {
-        const result = await addMedia(file);
-        messageData.file = {
-          type: file.type,
-          name: file.name,
-          link: result.url,
-        };
-      }
-      const newMessage = new message(messageData);
-      await newMessage.save();
-      const populatedMessage = await message
-        .findById(newMessage._id)
-        .populate("sender", "_id username profilePicture")
-        .populate("receiver", "_id username profilePicture");
-      const receiver1 = await user.findOne({ _id: receiver });
+      const { sender, receiver, group: groupId, content, file } = data;
+      console.log("Message data received:", data);
       const sender1 = await user.findOne({ _id: sender });
       if (!sender1) {
         console.error("Sender not found");
         return;
       }
-      if (!receiver1) {
-        console.error("Receiver not found");
+      if (groupId) {
+        const group1 = await group
+          .findOne({ _id: groupId })
+          .populate("members", " username ");
+        if (!group1) {
+          console.error("Group not found");
+          return;
+        }
+        const messageData: messageInterface = {
+          sender,
+          receiver,
+          group: groupId,
+          content,
+          isRead: [
+            {
+              user: sender,
+              readAt: new Date(),
+            },
+          ],
+        };
+        if (file) {
+          const result = await addMedia(file);
+          messageData.file = {
+            type: file.type,
+            name: file.name,
+            link: result.url,
+          };
+        }
+        const newMessage = new message(messageData);
+        await newMessage.save();
+        const populatedMessage = await message
+          .findById(newMessage._id)
+          .populate("sender", "_id username profilePicture");
+        const members = group1.members.map((member: any) => member.username);
+        if (!members || members.length === 0) {
+          console.error("No members in the group");
+          return;
+        }
+        members.forEach((member: string) => {
+          if (sender1.username != member)
+            io.to(member).emit("receive_message", {
+              message: populatedMessage,
+            });
+          else
+            socket.to(member).emit("receive_message", {
+              message: populatedMessage,
+            });
+          io.to(member).emit("message_preview", {
+            message: populatedMessage,
+          });
+        });
         return;
+      } else {
+        const messageData: messageInterface = {
+          sender,
+          receiver,
+          content,
+          isRead: [
+            {
+              user: sender,
+              readAt: new Date(),
+            },
+          ],
+        };
+        if (file) {
+          const result = await addMedia(file);
+          messageData.file = {
+            type: file.type,
+            name: file.name,
+            link: result.url,
+          };
+        }
+        const newMessage = new message(messageData);
+        await newMessage.save();
+        const populatedMessage = await message
+          .findById(newMessage._id)
+          .populate("sender", "_id username profilePicture")
+          .populate("receiver", "_id username profilePicture");
+        const receiver1 = await user.findOne({ _id: receiver });
+        if (!receiver1) {
+          console.error("Receiver not found");
+          return;
+        }
+        io.to(receiver1.username).emit("receive_message", {
+          message: populatedMessage,
+        });
+        io.to(receiver1.username).emit("message_preview", {
+          message: populatedMessage,
+        });
+        io.to(sender1.username).emit("message_preview", {
+          message: populatedMessage,
+        });
+        socket.to(sender1.username).emit("receive_message", {
+          message: populatedMessage,
+        });
       }
-      io.to(receiver1.username).emit("receive_message", {
-        message: populatedMessage,
-      });
-      io.to(receiver1.username).emit("message_preview", {
-        message: populatedMessage,
-      });
-      io.to(sender1.username).emit("message_preview", {
-        message: populatedMessage,
-      });
-      socket.to(sender1.username).emit("receive_message", {
-        message: populatedMessage,
-      });
     });
 
     socket.on("disconnect", async () => {

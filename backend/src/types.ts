@@ -27,3 +27,11 @@ export interface messageInterface {
     readAt: Date;
     }[];
 }
+
+export interface groupInterface{
+    _id: string;
+    name: string;
+    logo: string;
+    members: userInterface[];
+    admins: userInterface[];
+}

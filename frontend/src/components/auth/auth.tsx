@@ -168,9 +168,9 @@ function Register({
     (e.target as HTMLFormElement).reset();
   }
   return (
-    <>
+    <div className="bg-[#171717] flex flex-col justify-center px-8 rounded-xl w-[30%] h-[75%]">
       {loading ? (
-        <div className="bg-[#171717] flex flex-col justify-center px-8 rounded-xl w-[30%] h-[75%]">
+        <>
           <h1 className="text-2xl font-bold w-full text-center text-[#e5e5e5]">
             Welcome back
           </h1>
@@ -252,10 +252,10 @@ function Register({
               </span>
             </p>
           </form>
-        </div>
+        </>
       ) : (
         <Loading />
       )}
-    </>
+    </div>
   );
 }

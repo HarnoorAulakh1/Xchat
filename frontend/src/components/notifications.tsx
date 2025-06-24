@@ -10,7 +10,7 @@ import { notificationContext } from "@/contexts/notification";
 
 export default function Notifications() {
   const { notifications, notify } = useContext(notificationContext);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading] = useState<boolean>(false);
   console.log("Notifications:", notifications);
   return (
     <div className="w-full flex flex-col p-2 items-center gap-4 overflow-y-scroll h-full">
@@ -27,6 +27,7 @@ export default function Notifications() {
                   key={notification._id}
                   _id={notification._id}
                   sender={notification.sender}
+                  group={notification.group}
                   receiver={notification.receiver}
                   title={notification.title}
                   description={notification.description}
@@ -47,6 +48,7 @@ function Tab({
   _id,
   sender,
   receiver,
+  group,
   title,
   description,
   type,
@@ -55,6 +57,7 @@ function Tab({
   _id?: string;
   sender?: string;
   receiver?: string;
+  group?: string;
   title?: string;
   description?: string;
   type?: string;
@@ -65,19 +68,27 @@ function Tab({
   async function remove() {
     setVisible(false);
     notify((x) => x.filter((item) => item._id !== _id));
-    if (sender && receiver && _id)
+    if (sender && (receiver || group) && _id)
       await api.delete("/notification/deleteNotification/" + _id);
   }
   function handle(action: string) {
     const socket = user.socket;
     notify((x) => x.filter((item) => item._id !== _id));
     setVisible(false);
-    if (socket)
+    if (socket){
+      if(group)
+        socket.emit("groupRequestAction", {
+        sender,
+        receiver,
+        group,
+        action,
+      });
+      else
       socket.emit("requestAction", {
         sender,
         receiver,
         action,
-      });
+      });}
   }
   return (
     <>
