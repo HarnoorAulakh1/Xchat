@@ -11,7 +11,7 @@ export const profileContext = createContext<{
     email: string;
     profilePicture: string;
     isOnline: boolean;
-    socket: Socket | null;
+    socket?: Socket | null;
   };
   setUser: React.Dispatch<React.SetStateAction<userInterface>>;
 }>({

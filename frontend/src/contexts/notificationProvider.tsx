@@ -44,7 +44,6 @@ export default function NotificationProvider({
         {notifications.map((item, index) => (
           (item!=undefined && <Tab
             key={index}
-            _id={item._id}
             title={item.title}
             description={item.description}
             type={item.type}
@@ -58,14 +57,12 @@ export default function NotificationProvider({
 }
 
 function Tab({
-  _id,
   title,
   description,
   type,
   time,
   popup = true,
 }: {
-  _id: string;
   title: string;
   description: string;
   type: string;

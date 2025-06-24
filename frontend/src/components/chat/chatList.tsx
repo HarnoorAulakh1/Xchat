@@ -97,9 +97,11 @@ function ChatListItem({
     };
     const handleMessagePreview = (data: { message: messageInterface }) => {
       if (
-        (data.message.sender._id == _id &&
+        (data.message.receiver &&
+          data.message.sender._id == _id &&
           data.message.receiver._id == user._id) ||
-        (data.message.sender._id == user._id &&
+        (data.message.receiver &&
+          data.message.sender._id == user._id &&
           data.message.receiver._id == _id)
       ) {
         const content = data.message.content;
@@ -174,7 +176,7 @@ function ChatListItem({
   }, [_id, user._id]);
   async function setCurrrentChat() {
     try {
-       await api.post(
+      await api.post(
         `/message/markAsRead?sender=${user._id}&receiver=${_id}&readBy=${
           user._id
         }&time=${new Date().toISOString()}`

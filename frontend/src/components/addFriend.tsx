@@ -83,7 +83,7 @@ function Tab({
   username: string;
   name?: string;
   profilePicture?: string;
-  socket: Socket | null;
+  socket?: Socket | null;
 }) {
   const { user } = useContext(profileContext);
   const { addNotification } = useNotify();

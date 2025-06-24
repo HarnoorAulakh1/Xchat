@@ -1,3 +1,4 @@
+import { Socket } from "socket.io-client";
 export interface userInterface {
   _id: string;
   username: string;
@@ -6,6 +7,7 @@ export interface userInterface {
   email: string;
   profilePicture: string;
   isOnline: boolean;
+  socket?: Socket | null;
 }
 
 export interface messageInterface {
