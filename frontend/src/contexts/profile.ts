@@ -12,6 +12,7 @@ export const profileContext = createContext<{
     profilePicture: string;
     isOnline: boolean;
     socket?: Socket | null;
+    collapse?: boolean;
   };
   setUser: React.Dispatch<React.SetStateAction<userInterface>>;
 }>({

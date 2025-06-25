@@ -12,6 +12,7 @@ import { formatTime } from "@/lib/utils";
 import { api } from "@/lib/utils";
 import { FaFileAlt } from "react-icons/fa";
 import { IoCheckmarkDoneOutline } from "react-icons/io5";
+import {GoSidebarCollapse} from "react-icons/go";
 
 export default function ChatArea() {
   const {
@@ -20,7 +21,7 @@ export default function ChatArea() {
 
   return (
     <div className="w-full h-full rounded-2xl p-3">
-      <div className="bg-[#0a0a0a] rounded-2xl w-full h-full">
+      <div className=" rounded-2xl w-full h-full">
         {username ? (
           <Messaging
             _id={_id}
@@ -49,7 +50,7 @@ function Messaging({
 }) {
   const startRef = useRef<HTMLDivElement>(null);
   const { messages, setMessages } = useContext(messageContext);
-  const { user } = useContext(profileContext);
+  const { user,setUser } = useContext(profileContext);
   const [file, setFile] = useState<File>();
   useEffect(() => {
     setTimeout(() => {
@@ -179,7 +180,16 @@ function Messaging({
   }
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="flex flex-row items-center justify-between p-3 border-b border-gray-700">
+      <div className="flex flex-row items-center gap-2 p-3 ">
+         <button
+              onClick={() => setUser((x)=> ({ ...x, collapse: !x.collapse }))}
+              className="p-2 rounded-xl hover:bg-gray-700 text-md "
+            >
+              <GoSidebarCollapse className="text-xl text-[#e5e5e5]" />
+            </button>
+        <h1 className="text-[#e5e5e5]  font-bold">Xchat</h1>
+      </div>
+      <div className="flex flex-row bg-[#0a0a0a] rounded-t-2xl items-center justify-between p-3 border-b border-gray-700">
         <div className="flex flex-row items-center gap-4">
           {profilePicture != "NULL" ? (
             <img
@@ -200,7 +210,7 @@ function Messaging({
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto p-2 bg-[#0a0a0a]">
         <div className="flex flex-col gap-2">
           {messages.map((message, index) => (
             <Message
@@ -218,7 +228,7 @@ function Messaging({
       </div>
       <form
         onSubmit={(e) => sendMessage(e)}
-        className="p-3 border-t border-gray-700"
+        className="p-3 border-t border-gray-700 bg-[#0a0a0a] rounded-b-2xl"
       >
         <div className="flex flex-row  items-center">
           <div className="w-full gap-2 flex flex-row items-center">

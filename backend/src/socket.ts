@@ -220,7 +220,7 @@ export const initSocket = (server: HTTPServer) => {
     });
     socket.on("send_message", async (data) => {
       const { sender, receiver, group: groupId, content, file } = data;
-      console.log("Message data received:", data);
+      //console.log("Message data received:", data);
       const sender1 = await user.findOne({ _id: sender });
       if (!sender1) {
         console.error("Sender not found");

@@ -4,6 +4,8 @@
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 html, body, #root {
+  background-color: #161716
+;
   height: 100%;
   margin: 0;
 }

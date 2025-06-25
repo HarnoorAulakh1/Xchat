@@ -67,7 +67,7 @@ function Login({
     (e.target as HTMLFormElement).reset();
   }
   return (
-    <div className="bg-[#171717] flex flex-col justify-center px-8 rounded-xl w-[30%] h-[55%]">
+    <div className="bg-[#171717] flex flex-col justify-center px-8 rounded-xl w-[80%] md:w-[30%] h-[55%]">
       {loading ? (
         <>
           <h1 className="text-2xl font-bold w-full text-center text-[#e5e5e5]">
@@ -168,7 +168,7 @@ function Register({
     (e.target as HTMLFormElement).reset();
   }
   return (
-    <div className="bg-[#171717] flex flex-col justify-center px-8 rounded-xl w-[30%] h-[75%]">
+    <div className="bg-[#171717] flex flex-col justify-center px-8 rounded-xl w-[80%] md:w-[30%] h-[75%]">
       {loading ? (
         <>
           <h1 className="text-2xl font-bold w-full text-center text-[#e5e5e5]">

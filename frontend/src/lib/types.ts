@@ -8,6 +8,7 @@ export interface userInterface {
   profilePicture: string;
   isOnline: boolean;
   socket?: Socket | null;
+  collapse?: boolean;
 }
 
 export interface messageInterface {

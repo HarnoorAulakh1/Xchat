@@ -28,7 +28,7 @@ export async function addMedia(file: {
 
 export function addFile(file: any) {
   const path =
-    "/Users/harnoorsinghaulakh/Desktop/Projects/Xchat/backend/src/uploads/" +
+    "src/uploads/" +
     file.name;
   writeFile(path, file.link, (err: any) => {
     if (err) console.log(err);
