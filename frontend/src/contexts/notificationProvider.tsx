@@ -40,7 +40,7 @@ export default function NotificationProvider({
   return (
     <notificationContext.Provider value={{ notifications, notify }}>
       {children}
-      <div className="flex flex-col justify-center items-center fixed top-2 left-[40%]">
+      <div className="flex flex-col justify-center items-center z-999 fixed top-5 md:top-2 left-[10%] md:left-[40%]">
         {notifications.map((item, index) => (
           (item!=undefined && <Tab
             key={index}

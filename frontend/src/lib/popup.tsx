@@ -37,7 +37,7 @@ export default function Popup({
             }}
             className="fixed z-10 h-screen w-screen"
           ></div>
-          <div className={`flex flex-col justify-center items-center z-20 ${height!=undefined?`h-[${height}]`:"h-[50%]"} ${width!=undefined?`w-[${width}]`:"w-[50%]"} bg-[#333333] rounded-xl`}>
+          <div className={`flex flex-col justify-center items-center z-20 ${height!=undefined?`h-[${height}]`:"md:h-[50%] h-[50%]"} ${width!=undefined?`w-[${width}]`:"w-[80%] md:w-[50%]"} bg-[#333333] rounded-xl`}>
             <div className="w-full flex items-center rounded-t-xl p-1 bg-gray-400">
               <div
                 onClick={() => {

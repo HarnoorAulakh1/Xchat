@@ -34,11 +34,11 @@ export function AddFriend() {
     };
   }, [username]);
   return (
-      <div className="flex flex-row gap-2 w-full h-full items-center justify-center rounded-md bg-[#262626] text-[#e5e5e5]">
-      <img
+      <div className="flex flex-row gap-2 px-2 w-full h-full items-center justify-center rounded-md bg-[#262626] text-[#e5e5e5]">
+      {/* <img
         src="./teddy.avif"
         className="w-[20%] h-[80%] bg-gray-500 rounded-sm ml-5"
-      ></img>
+      ></img> */}
       <div className="flex flex-col w-full h-full items-center pt-10">
         <h1 className="text-2xl font-bold mb-4">Add Friend</h1>
         <form className="w-full relative max-w-sm h-full">

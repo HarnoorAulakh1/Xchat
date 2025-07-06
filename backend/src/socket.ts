@@ -11,7 +11,7 @@ const map = new Map<string, number>();
 
 export const initSocket = (server: HTTPServer) => {
   const io = new Server(server, {
-    maxHttpBufferSize: 1e7,
+    maxHttpBufferSize: 2e7,
     cors: {
       origin: "*",
       methods: ["GET", "POST"],

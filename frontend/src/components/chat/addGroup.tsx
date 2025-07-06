@@ -34,6 +34,15 @@ export default function AddGroup() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const groupName = formData.get("username") as string;
+    if (groupName.length < 3) {
+      addNotification({
+        title: "Group Name Too Short",
+        description: "Group name must be at least 3 characters long.",
+        type: "error",
+        popup: true,
+      });
+      return;
+    }
     const response = await api.post("/group/createGroup", {
       name:groupName,
       admin: user._id,
@@ -55,11 +64,11 @@ export default function AddGroup() {
     (e.target as HTMLFormElement).reset();
   }
   return (
-    <div className="flex flex-row gap-2 w-full h-full items-center justify-center rounded-md bg-[#262626] text-[#e5e5e5]">
-      <img
+    <div className="flex flex-row gap-2 px-2 w-full h-full items-center justify-center rounded-md bg-[#262626] text-[#e5e5e5]">
+      {/* <img
         src="./teddy.avif"
         className="w-[30%] h-[80%] bg-gray-500 rounded-sm ml-5"
-      ></img>
+      ></img> */}
       <div className=" flex flex-col w-full h-full items-center pt-10">
         <form
           onSubmit={(e) => createGroup(e)}
