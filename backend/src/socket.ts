@@ -19,10 +19,9 @@ export const initSocket = (server: HTTPServer) => {
   });
 
   io.on("connection", (socket: Socket) => {
-    console.log("A user connected:", socket.id);
+    //console.log("A user connected:", socket.id);
     socket.emit("welcome", { message: "Welcome to the chat!" });
     socket.on("register", async (data) => {
-      console.log("User registered:", data);
       socket.data.username = data.username;
       socket.data._id = data._id;
       map.set(
@@ -324,21 +323,13 @@ export const initSocket = (server: HTTPServer) => {
         });
       }
     });
-    socket.on("connect_error", (err) => {
-      console.error("Connection error:", err);
-      socket.emit("disconnected", {
-        message: "Connection error. Please try again later.",
-      });
-    });
+
     socket.on("disconnect", async () => {
-      socket.emit("disconnected", {
-        message: "You have been disconnected",
-      });
       map.set(socket.data.username, map.get(socket.data.username)! - 1);
-      console.log("A user disconnected:", socket.data.username);
-      console.log(
-        `User ${socket.data.username} disconnected. Remaining connections: ${map.get(socket.data.username)}`
-      );
+      // console.log("A user disconnected:", socket.data.username);
+      // console.log(
+      //   `User ${socket.data.username} disconnected. Remaining connections: ${map.get(socket.data.username)}`
+      // );
       if (map.get(socket.data.username)! <= 0) {
         map.delete(socket.data.username);
         await user.updateOne(
