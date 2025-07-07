@@ -29,6 +29,7 @@ function App() {
         <NotificationProvider>
           <CurrentProvider>
             <MessageProvider>
+             
               <RouterProvider router={router} />
             </MessageProvider>
           </CurrentProvider>

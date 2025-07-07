@@ -16,7 +16,7 @@ export default function AppLayout() {
   const { user, setUser } = useContext(profileContext);
   const [loading, setLoading] = useState(false);
   const socket = useRef<Socket | null>(null);
-  const { notify } = useNotify();
+  const { notify, addNotification } = useNotify();
   useEffect(() => {
     async function check() {
       setLoading(false);
@@ -44,14 +44,35 @@ export default function AppLayout() {
       setLoading(true);
     }
     check();
-    socket.current = io(import.meta.env.VITE_PRODUCTION || "http://localhost:8000", {
-      withCredentials: true,
-      transports: ["websocket"],
+    const promise = new Promise((resolve) => {
+      socket.current = io(
+        import.meta.env.VITE_PRODUCTION || "http://localhost:8000",
+        {
+          withCredentials: true,
+          transports: ["websocket"],
+        }
+      );
+      resolve(socket.current);
     });
-    setUser((prevUser) => ({
-      ...prevUser,
-      socket: socket.current,
-    }));
+    const handle=async()=>{
+    await promise.then((data) => {
+      setTimeout(() => {
+        console.log("Connected to server", data);
+        if (data && (data as Socket).connected)
+          addNotification({
+            title: "Connectted Successfully",
+            description: "Connection to server established successfully.",
+            type: "success",
+            popup: true,
+          });
+      }, 500);
+      setUser((prevUser) => ({
+        ...prevUser,
+        socket: socket.current,
+      }));
+    });
+  }
+    handle();
     return () => {
       if (socket.current) {
         socket.current.disconnect();
@@ -60,12 +81,15 @@ export default function AppLayout() {
     };
   }, [navigate, setUser]);
   useEffect(() => {
-    if (socket.current && user.username)
+   // console.log("Socket initialized:", socket.current,user.username, user._id);
+    if (socket.current && user.username && user._id) {
       socket.current.emit("register", {
         username: user.username,
         _id: user._id,
       });
+    }
   }, [socket, user.username, user._id]);
+
   useEffect(() => {
     async function handle() {
       try {
