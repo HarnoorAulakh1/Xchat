@@ -38,7 +38,7 @@ export default function AppLayout() {
         }
       } catch (err) {
         console.error(err);
-        navigate("/auth");
+        navigate("/");
         setLoading(true);
       }
       setLoading(true);

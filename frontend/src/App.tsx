@@ -6,20 +6,19 @@ import UiProvider from "./contexts/notificationProvider";
 import Auth from "./components/auth/auth";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import NotificationProvider from "./contexts/notificationProvider";
-import Home from "./components/home";
 
 function App() {
   const router = createBrowserRouter([
-    {
-      path: "/",
-      element: <Home />,
-    },
+    // {
+    //   path: "/",
+    //   element: <Home />,
+    // },
     {
       path: "/app",
       element: <AppLayout />,
     },
     {
-      path: "/auth",
+      path: "/",
       element: <Auth />,
     },
   ]);

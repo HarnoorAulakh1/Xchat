@@ -23,7 +23,7 @@ export default function SideBar() {
 
   async function logout() {
     await api.post("/user/logout");
-    navigate("/auth");
+    navigate("/");
   }
   return (
     <>
